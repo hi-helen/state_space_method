@@ -1,0 +1,95 @@
+
+
+```{r}
+Nile <- datasets::Nile
+```
+
+
+```{r}
+nt   <- 100                      # no. time intervals
+time <- c(1871:1970)
+
+sig_ep  <- 15099                        # process err variance
+sig_eta  <- 1469.1                       # obs error variance
+
+a <- rep(0,nt)
+P <- rep(0,nt)
+
+
+v <- rep(0,nt)
+F <- rep(0,nt)
+K <- rep(0,nt)
+
+
+
+a[1] = 0
+P[1] = 10^10
+
+
+v[1] <- Nile[1] - a[1]
+F[1] <- P[1] + sig_ep
+K[1] <- P[1]/F[1]
+
+
+for(t in 2:nt){
+  a[t] <- a[t-1] + K[t-1]*v[t-1]
+  P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+
+  
+  v[t] <- Nile[t] - a[t]
+  F[t] <- P[t] + sig_ep
+  K[t] <- P[t]/F[t]
+}
+
+hatalp <- rep(0,nt)
+V <- rep(0,nt)
+r <- rep(0,nt+1)
+N <- rep(0,nt+1)
+
+r[nt] <- 0
+hatalp[nt] <- a[nt]
+N[nt] <- 0
+V[nt] <- 0
+
+for (k in 1:nt){
+  m <- nt-k+1
+  r[m] <- v[m]/F[m]+(1-K[m])*r[m+1]
+  hatalp[m]<-a[m]+P[m]*r[m]
+  N[m] <- 1/F[m]+(1-K[m])^2*N[m+1]
+  V[m] <- P[m]-P[m]^2*N[m]
+}
+
+```
+
+```{r}
+png('kalman_filtering_local_a.png',width=1000, height=520)
+plot(time[c(2:nt)],a[c(2:nt)], type="l")
+points(time[c(2:nt)], Nile[c(2:nt)], pch=16)
+abline(h=0)
+dev.off()
+```
+
+
+```{r}
+png('kalman_filtering_local_P.png',width=1000, height=520)
+plot(time[c(2:nt)],P[c(2:nt)],type="l")
+dev.off()
+```
+
+
+```{r}
+png('smoothing_local_hata.png',width=1000, height=520)
+plot(time, hatalp, type="l")
+points(time, Nile, pch=16)
+dev.off()
+```
+
+
+```{r}
+png('smoothing_local_vara.png',width=1000, height=520)
+plot(time,V,type="l")
+dev.off()
+
+
+```
+
