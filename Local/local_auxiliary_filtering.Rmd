@@ -1,0 +1,70 @@
+
+```{r}
+Nile <- datasets::Nile
+```
+
+
+```{r}
+nt   <- 100                      # no. time intervals
+time <- c(1871:1970)
+
+sig_ep  <- 15099                        # process err variance
+sig_eta  <- 1469.1                       # obs error variance
+
+a <- rep(0,nt)
+P <- rep(0,nt)
+
+
+v <- rep(0,nt)
+F <- rep(0,nt)
+K <- rep(0,nt)
+
+
+
+a[1] = 0
+P[1] = 10^10
+
+
+v[1] <- Nile[1] - a[1]
+F[1] <- P[1] + sig_ep
+K[1] <- P[1]/F[1]
+
+
+for(t in 2:nt){
+  a[t] <- a[t-1] + K[t-1]*v[t-1]
+  P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+
+  
+  v[t] <- Nile[t] - a[t]
+  F[t] <- P[t] + sig_ep
+  K[t] <- P[t]/F[t]
+}
+
+```
+
+
+```{r}
+ESS_py <- read.csv(file = 'local_ESS.csv')$X0
+```
+
+```{r}
+a_py <- read.csv(file = 'local_a.csv')$X0
+```
+
+
+```{r}
+time2 <- time + 1
+```
+
+
+```{r}
+
+plot(time[c(2:nt)],a[c(2:nt)], type="l")
+lines(time2[c(2:nt)], a_py[c(2:nt)], type="l", ,col="red")
+```
+
+
+```{r}
+plot(time[c(2:nt)],ESS_py[c(1:nt-1)], type="l")
+```
+

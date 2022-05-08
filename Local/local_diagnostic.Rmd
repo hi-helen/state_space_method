@@ -1,0 +1,116 @@
+
+```{r}
+Nile <- datasets::Nile
+```
+
+```{r}
+nt   <- 100                      # no. time intervals
+time <- c(1871:1970)
+
+sig_ep  <- 15099                        # process err variance
+sig_eta  <- 1469.1                       # obs error variance
+
+a <- rep(0,nt)
+P <- rep(0,nt)
+
+
+v <- rep(0,nt)
+F <- rep(0,nt)
+K <- rep(0,nt)
+e <- rep(0,nt)
+
+
+
+a[1] = 0
+P[1] = 10^7
+
+
+v[1] <- Nile[1] - a[1]
+F[1] <- P[1] + sig_ep
+K[1] <- P[1]/F[1]
+e[1] <- v[1]/(sqrt(F[1]))
+
+
+for(t in 2:nt){
+  a[t] <- a[t-1] + K[t-1]*v[t-1]
+  P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+  
+  v[t] <- Nile[t] - a[t]
+  F[t] <- P[t] + sig_ep
+  K[t] <- P[t]/F[t]
+  e[t] <- v[t]/(sqrt(F[t]))
+}
+
+```
+
+
+```{r}
+png('local_e.png',width=600, height=400)
+plot(time[c(2:nt)],e[c(2:nt)], type="l")
+abline(h=0)
+dev.off()
+```
+
+
+```{r}
+png('local_e_histogram.png',width=600, height=400)
+hist(e[c(2:nt)], probability=TRUE)
+lines(density(e[c(2:nt)]))
+dev.off()
+```
+
+```{r}
+png('qq.png',width=600, height=400)
+qqnorm(e[c(2:nt)])
+qqline(e[c(2:nt)])
+dev.off()
+```
+
+```{r}
+m1 <- 0
+for(t in 2:nt){
+  m1 <- m1 + e[t]
+}
+m1 <- m1 / (nt-1)
+
+
+m2 <- 0
+m3 <- 0
+m4 <- 0
+for(t in 2:nt){
+  m2 <- m2 + (e[t]-m1)^2
+  m3 <- m3 + (e[t]-m1)^3
+  m4 <- m4 + (e[t]-m1)^4
+}
+m2 <- m2 / (nt-1)
+m3 <- m3 / (nt-1)
+m4 <- m4 / (nt-1)
+
+tS <- m3/sqrt(m2^3)
+tK <- m4/(m2^2)
+tN <- (nt-1)*(tS^2/6+(tK-3)^2/24)
+
+sprintf("S = %f", tS)
+sprintf("K = %f", tK)
+sprintf("N = %f", tN)
+```
+
+
+```{r}
+t_c <- rep(0,10)
+for(j in 2:10){
+  for (t in (j+1):nt){
+    t_c[j] <- t_c[j] + (e[t] - m1) * (e[t-j] - m1)
+  }
+  t_c[j] <- t_c[j] / (nt * m2)
+}
+```
+
+
+```{r}
+png('local_correlogram.png',width=600, height=400)
+barplot(t_c[c(2:10)])
+abline(h=0)
+dev.off()
+```
+

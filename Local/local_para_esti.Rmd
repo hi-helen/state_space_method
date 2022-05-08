@@ -1,0 +1,235 @@
+
+```{r}
+Nile <- datasets::Nile
+
+```
+
+```{r}
+nt   <- 100                      # no. time intervals
+time <- c(1871:1970)
+```
+
+```{r}
+#starting from point (10500,500)
+#EM algorithm
+sig_ep_path_1  <- rep(10500,130)
+sig_eta_path_1 <- rep(500,130)
+
+
+for(i in 1:130){
+  sig_ep  <- sig_ep_path_1[i]                        # process err variance
+  sig_eta  <- sig_eta_path_1[i]                      # obs error variance
+  a <- rep(0,nt)
+  P <- rep(0,nt)
+
+  
+  v <- rep(0,nt)
+  F <- rep(0,nt)
+  K <- rep(0,nt)
+  
+  
+  
+  a[1] <- 0
+  P[1] <- 10^10
+
+  
+  v[1] <- Nile[1] - a[1]
+  F[1] <- P[1] + sig_ep
+  K[1] <- P[1]/F[1]
+  
+  
+  for(t in 2:nt){
+    a[t] <- a[t-1] + K[t-1]*v[t-1]
+    P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+    
+    
+    v[t] <- Nile[t] - a[t]
+    F[t] <- P[t] + sig_ep
+    K[t] <- P[t]/F[t]
+  }
+  
+  u <- rep(0,nt)
+  D <- rep(0,nt)
+  r <- rep(0,nt)
+  N <- rep(0,nt)
+  temp1<-rep(0,nt)
+  temp2<-rep(0,nt)
+  
+  
+  r[nt] <- 0
+  N[nt] <- 0
+
+  
+  for (k in 1:(nt-1)){
+    m <- nt-k+1
+    r[m-1] <- v[m]/F[m]+(1-K[m])*r[m]
+    N[m-1] <- 1/F[m]+(1-K[m])^2*N[m]
+  }
+  
+  for (t in 1:nt){
+    u[t] <- v[t]/F[t]-K[t]*r[t]
+    D[t] <- 1/F[t]+K[t]^2*N[t]
+    temp1[t] <- u[t]^2-D[t]
+    temp2[t] <- r[t]^2-N[t]
+    
+  }
+  sig_ep_path_1[i+1]  <- sig_ep + 1/nt*sig_ep^2*sum(temp1)
+  sig_eta_path_1[i+1] <- sig_eta+ 1/(nt-1)*sig_eta^2*sum(temp2)
+  
+
+}
+
+```
+
+
+
+```{r}
+#starting from point (25000,4500)
+#EM algorithm
+sig_ep_path_2  <- rep(25000,150)
+sig_eta_path_2 <- rep(4500,150)
+
+
+for(i in 1:150){
+  sig_ep  <- sig_ep_path_2[i]                        # process err variance
+  sig_eta  <- sig_eta_path_2[i]                      # obs error variance
+  a <- rep(0,nt)
+  P <- rep(0,nt)
+
+  
+  v <- rep(0,nt)
+  F <- rep(0,nt)
+  K <- rep(0,nt)
+  
+  
+  
+  a[1] <- 0
+  P[1] <- 10^10
+
+  
+  v[1] <- Nile[1] - a[1]
+  F[1] <- P[1] + sig_ep
+  K[1] <- P[1]/F[1]
+  
+  
+  for(t in 2:nt){
+    a[t] <- a[t-1] + K[t-1]*v[t-1]
+    P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+    
+    
+    v[t] <- Nile[t] - a[t]
+    F[t] <- P[t] + sig_ep
+    K[t] <- P[t]/F[t]
+  }
+  
+  u <- rep(0,nt)
+  D <- rep(0,nt)
+  r <- rep(0,nt)
+  N <- rep(0,nt)
+  temp1<-rep(0,nt)
+  temp2<-rep(0,nt)
+  
+  
+  r[nt] <- 0
+  N[nt] <- 0
+
+  
+  for (k in 1:(nt-1)){
+    m <- nt-k+1
+    r[m-1] <- v[m]/F[m]+(1-K[m])*r[m]
+    N[m-1] <- 1/F[m]+(1-K[m])^2*N[m]
+  }
+  
+  for (t in 1:nt){
+    u[t] <- v[t]/F[t]-K[t]*r[t]
+    D[t] <- 1/F[t]+K[t]^2*N[t]
+    temp1[t] <- u[t]^2-D[t]
+    temp2[t] <- r[t]^2-N[t]
+    
+  }
+  sig_ep_path_2[i+1]  <- sig_ep + 1/nt*sig_ep^2*sum(temp1)
+  sig_eta_path_2[i+1] <- sig_eta+ 1/(nt-1)*sig_eta^2*sum(temp2)
+  
+
+}
+```
+
+
+
+
+```{r}
+#contour plot
+sig_ep_seq  <- seq(10000, 26000, 320)
+sig_eta_seq <- seq(200, 5000, 96)
+z <- matrix(0,nrow=51,ncol=51)
+
+for(i in 1:nrow(z)){
+  for(j in 1:ncol(z)){
+    sig_ep  <- sig_ep_seq[i]                        # process err variance
+    sig_eta  <- sig_eta_seq[j]                       # obs error variance
+    
+    a <- rep(0,nt)
+    P <- rep(0,nt)
+
+
+    
+    v <- rep(0,nt)
+    F <- rep(0,nt)
+    K <- rep(0,nt)
+    
+    bulk <- rep(0,nt)
+    
+    
+    
+    a[1] = 0
+    P[1] = 10^10
+
+    
+    v[1] <- Nile[1] - a[1]
+    F[1] <- P[1] + sig_ep
+    K[1] <- P[1]/F[1]
+    bulk[1] <- log(F[1])+(v[1])^2/F[1]
+    
+    
+    for(t in 2:nt){
+      a[t] <- a[t-1] + K[t-1]*v[t-1]
+      P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+
+      
+      v[t] <- Nile[t] - a[t]
+      F[t] <- P[t] + sig_ep
+      K[t] <- P[t]/F[t]
+      bulk[t] <- log(F[t])+(v[t])^2/F[t]
+    }
+    
+    z[i,j] = -nt/2*log(2*(pi))-1/2*sum(bulk)
+  }
+}
+```
+
+```{r}
+png('local_para_esti_plain.png',width=600, height=500)
+filled.contour(sig_ep_seq, sig_eta_seq, z, plot.axes = {
+  axis(1)
+  axis(2)
+  contour(sig_ep_seq, sig_eta_seq, z, add = TRUE, lwd = 2)
+}
+)
+dev.off()
+
+```
+
+
+```{r}
+png('local_para_esti.png',width=600, height=500)
+filled.contour(sig_ep_seq, sig_eta_seq, z, plot.axes = {
+  axis(1)
+  axis(2)
+  points(sig_ep_path_1,sig_eta_path_1,col="green", pch = 20, cex = 0.5)
+  points(sig_ep_path_2,sig_eta_path_2,col="blue", pch = 20, cex = 0.5)
+  contour(sig_ep_seq, sig_eta_seq, z, add = TRUE, lwd = 2)
+}
+)
+dev.off()
+
+```

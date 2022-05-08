@@ -1,0 +1,110 @@
+```{r}
+#The code in this notebook follows from
+#https://stats.stackexchange.com/questions/237468/bootstrap-filter-particle-filter-algorithmunderstanding
+```
+
+
+```{r}
+Nile <- datasets::Nile
+```
+
+
+```{r}
+
+nt   <- 100                      # no. time intervals
+time <- c(1871:1970)
+
+sig_ep  <- 15099                        # process err variance
+sig_eta  <- 1469.1                      # obs error variance
+
+N <- 1000
+tau <- 100
+x.pf <- matrix(rep(NA,(tau+1)*N),nrow=tau+1)
+
+# 1. Initialization
+x.pf[1, ] <- rnorm(N,Nile[1],sig_eta)
+hat_alpha <- rep(NA,tau)
+hat_P <- rep(NA,tau)
+ESS  <- rep(NA,tau)
+for (t in 2:(tau+1)) {
+  
+  # 2. Importance sampling
+  x.pf[t, ] <- x.pf[t-1,] + rnorm(N,sd = sqrt(sig_eta))
+
+  # Likelihood
+  w.tilde <- dnorm(Nile[t-1], mean=x.pf[t, ], sd = sqrt(sig_ep))
+
+  # Normalize
+  w <- w.tilde/sum(w.tilde)
+
+  # Calculate
+  hat_alpha[t-1] <- sum(w*x.pf[t,])
+  hat_P[t-1] <- (sum(w*x.pf[t,]^2) - hat_alpha[t-1]^2)
+  ESS[t-1] <- 1/sum(w^2)
+
+  # 3. Resampling
+  s <- sample(1:N, size=N, replace=TRUE, prob=w)
+  x.pf[t,] <- x.pf[t, s]
+}
+
+```
+
+
+```{r}
+calculate <- function(){
+a <- rep(0,nt)
+P <- rep(0,nt)
+
+
+v <- rep(0,nt)
+F <- rep(0,nt)
+K <- rep(0,nt)
+
+
+a[1] = 0
+P[1] = 10^10
+
+
+v[1] <- Nile[1] - a[1]
+F[1] <- P[1] + sig_ep
+K[1] <- P[1]/F[1]
+
+
+for(t in 2:nt){
+  a[t] <- a[t-1] + K[t-1]*v[t-1]
+  P[t] <- P[t-1]*(1-K[t-1]) + sig_eta
+
+  
+  v[t] <- Nile[t] - a[t]
+  F[t] <- P[t] + sig_ep
+  K[t] <- P[t]/F[t]
+}
+  return(list("a" = a, "P" = P-sig_eta))
+}
+```
+
+
+
+```{r}
+mylist <- calculate()
+a <- mylist$a
+plot(time[c(2:nt)],a[c(2:nt)], type="l")
+
+lines(time[c(2:nt)],hat_alpha[c(1:nt-1)], type="l",col="red")
+```
+```{r}
+P <- mylist$P
+plot(time[c(2:nt)],P[c(2:nt)], type="l")
+
+lines(time[c(2:nt)],hat_P[c(1:nt-1)], type="l",col="red")
+```
+
+```{r}
+plot(time[c(2:nt)],Nile[c(2:nt)],pch = 20)
+lines(time[c(2:nt)],hat_alpha[c(1:nt-1)], type="l",col="red")
+```
+
+
+```{r}
+plot(time[c(2:nt)],ESS[c(2:nt)], type="l")
+```
